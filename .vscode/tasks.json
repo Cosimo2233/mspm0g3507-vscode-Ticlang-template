@@ -53,6 +53,30 @@
             "problemMatcher": []
         },
         {
+            "label": "MSPM0: Build (Debug)",
+            "type": "process",
+            "command": "D:/ti/ccs/utils/bin/gmake.exe",
+            "args": [
+                "-f", "Makefile",
+                "BUILD_DIR=build/debug",
+                "OPT_LEVEL=-O0",
+                "all"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": {
+                "owner": "cpp",
+                "fileLocation": ["relative", "${workspaceFolder}"],
+                "pattern": {
+                    "regexp": "^(.*?):(\\d+):(\\d+):\\s+(warning|error|fatal error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            }
+        },
+        {
             "label": "MSPM0: Build + Flash (J-Link)",
             "type": "process",
             "command": "powershell.exe",

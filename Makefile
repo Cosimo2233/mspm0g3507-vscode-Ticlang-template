@@ -5,6 +5,7 @@ MSPM0_SDK_ROOT ?= D:/ti/mspm0_sdk_2_04_00_06
 TICLANG_ROOT ?= D:/ti/ccs/tools/compiler/ti-cgt-armllvm_4.0.4.LTS
 SYSCONFIG_ROOT ?= D:/ti/SYSCONFIG
 BUILD_DIR ?= build
+OPT_LEVEL ?= -O2
 
 SOURCE_DIR := src
 INCLUDE_DIR := include
@@ -40,7 +41,7 @@ CFLAGS := \
     -I$(INCLUDE_DIR) \
     -I$(SYSCONFIG_DIR) \
     @$(DEVICE_OPT) \
-    -O2 \
+    $(OPT_LEVEL) \
     "-I$(MSPM0_SDK_ROOT)/source/third_party/CMSIS/Core/Include" \
     "-I$(MSPM0_SDK_ROOT)/source" \
     -gdwarf-3 \

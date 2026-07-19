@@ -82,7 +82,7 @@ build/firmware.map
 - `Makefile`
 - `.vscode/tasks.json`
 - `.vscode/c_cpp_properties.json`
-- `.vscode/launch.json`（添加调试配置后）
+- `.vscode/launch.json`
 
 ## 3. 第一次打开工程
 
@@ -461,92 +461,27 @@ D:\ti\ccs\ccs_base\DebugServer\bin\DSLite.exe
 | 2 | DAPLink/OpenOCD | 使用 CMSIS-DAP 探针 |
 | 3 | XDS110/DSLite | LaunchPad、TI 官方备用路径和恢复排障 |
 
-## 12. 配置断点调试
+## 12. 使用 DAPLink 断点调试
 
-编译和烧录任务已经可用。若工程中尚无 `.vscode/launch.json`，创建该文件并写入以下配置：
+工程已经在 `.vscode/launch.json` 中配置好 DAPLink + OpenOCD 调试，不需要手工创建配置。调试使用 Cortex-Debug、Arm GDB 和 MSPM0G350X SVD 外设描述文件。
 
-```json
-{
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "MSPM0G3507: Debug with J-Link",
-            "cwd": "${workspaceFolder}",
-            "executable": "${workspaceFolder}/build/firmware.out",
-            "request": "launch",
-            "type": "cortex-debug",
-            "servertype": "jlink",
-            "serverpath": "C:/Program Files/SEGGER/JLink_V930a/JLinkGDBServerCL.exe",
-            "gdbPath": "C:/Users/29871/AppData/Local/Texas Instruments/ti-embedded-debug/arm-none-eabi-gdb/14.2.rel1.1/arm-none-eabi-gdb.exe",
-            "device": "MSPM0G3507",
-            "interface": "swd",
-            "runToEntryPoint": "main",
-            "preLaunchTask": "MSPM0: Build",
-            "svdFile": "C:/Users/29871/.vscode/extensions/ti-development-tools.cortex-debug-dp-mspm0-1.0.2/data/MSPM0G350X.svd",
-            "showDevDebugOutput": "none"
-        },
-        {
-            "name": "MSPM0G3507: Debug with DAPLink",
-            "cwd": "${workspaceFolder}",
-            "executable": "${workspaceFolder}/build/firmware.out",
-            "request": "launch",
-            "type": "cortex-debug",
-            "servertype": "openocd",
-            "serverpath": "D:/ti/openocd-b56339c/bin/openocd.exe",
-            "gdbPath": "C:/Users/29871/AppData/Local/Texas Instruments/ti-embedded-debug/arm-none-eabi-gdb/14.2.rel1.1/arm-none-eabi-gdb.exe",
-            "searchDir": [
-                "D:/ti/openocd-b56339c/share/openocd/scripts"
-            ],
-            "configFiles": [
-                "interface/cmsis-dap.cfg",
-                "target/ti/mspm0.cfg"
-            ],
-            "serverArgs": [
-                "-c",
-                "adapter speed 1000"
-            ],
-            "runToEntryPoint": "main",
-            "preLaunchTask": "MSPM0: Build",
-            "svdFile": "C:/Users/29871/.vscode/extensions/ti-development-tools.cortex-debug-dp-mspm0-1.0.2/data/MSPM0G350X.svd",
-            "showDevDebugOutput": "none"
-        },
-        {
-            "name": "MSPM0G3507: Debug with XDS110",
-            "cwd": "${workspaceFolder}",
-            "executable": "${workspaceFolder}/build/firmware.out",
-            "request": "launch",
-            "type": "cortex-debug",
-            "servertype": "openocd",
-            "serverpath": "D:/ti/openocd-b56339c/bin/openocd.exe",
-            "gdbPath": "C:/Users/29871/AppData/Local/Texas Instruments/ti-embedded-debug/arm-none-eabi-gdb/14.2.rel1.1/arm-none-eabi-gdb.exe",
-            "searchDir": [
-                "D:/ti/openocd-b56339c/share/openocd/scripts"
-            ],
-            "configFiles": [
-                "interface/xds110.cfg",
-                "target/ti/mspm0.cfg"
-            ],
-            "serverArgs": [
-                "-c",
-                "adapter speed 1000"
-            ],
-            "runToEntryPoint": "main",
-            "preLaunchTask": "MSPM0: Build",
-            "svdFile": "C:/Users/29871/.vscode/extensions/ti-development-tools.cortex-debug-dp-mspm0-1.0.2/data/MSPM0G350X.svd",
-            "showDevDebugOutput": "none"
-        }
-    ]
-}
-```
+调试构建与日常构建相互独立：
+
+| 用途 | 优化等级 | 输出文件 |
+| --- | --- | --- |
+| 日常编译和烧录 | `-O2` | `build/firmware.out` |
+| DAPLink 断点调试 | `-O0` | `build/debug/firmware.out` |
+
+`MSPM0: Build (Debug)` 会自动传入 `BUILD_DIR=build/debug OPT_LEVEL=-O0`，因此不会覆盖日常烧录使用的固件。
 
 ### 12.1 启动调试
 
 1. 打开 `src/main.c`。
 2. 单击行号左侧设置断点。
 3. 按 `F5`。
-4. 选择 J-Link、DAPLink 或 XDS110 调试配置。
-5. `preLaunchTask` 会自动编译工程。
-6. 调试器下载 `firmware.out`，并停在 `main()`。
+4. 如果 VS Code 要求选择配置，选择 `MSPM0G3507: Debug with DAPLink`。
+5. `preLaunchTask` 会自动执行 `MSPM0: Build (Debug)`。
+6. OpenOCD 连接 DAPLink，下载 `build/debug/firmware.out`，并停在 `main()`。
 
 启动调试前通常不需要单独执行烧录任务，因为 Cortex-Debug 会自动下载 ELF。
 
@@ -566,21 +501,7 @@ D:\ti\ccs\ccs_base\DebugServer\bin\DSLite.exe
 
 ### 12.3 调试优化等级
 
-Makefile 默认使用 `-O2`。高优化下可能出现变量显示为 `<optimized out>`、函数被内联或单步顺序与源码不一致。
-
-调试时可以暂时将：
-
-```make
--O2
-```
-
-改为：
-
-```make
--O0
-```
-
-然后执行 `MSPM0: Clean` 和 `MSPM0: Build`。完成调试、准备发布时再恢复为 `-O2`。
+Makefile 的默认优化等级仍是 `-O2`。按 `F5` 时，调试构建任务会单独使用 `-O0`，使变量、源码行和单步执行更容易观察。无需手工修改 Makefile，也无需在调试结束后恢复优化选项。
 
 当前 TI Clang 为 4.0.4 LTS，不需要旧版 TI Clang 的 `.TI.phattrs` 修复步骤。
 
@@ -613,13 +534,11 @@ Build + Flash
 ### 13.3 调试问题
 
 ```text
-将优化改为 -O0
-    ↓
-MSPM0: Clean
-    ↓
 设置断点
     ↓
 F5
+    ↓
+自动执行 MSPM0: Build (Debug)，以 -O0 构建并下载
     ↓
 单步、查看变量和寄存器
 ```
@@ -627,8 +546,6 @@ F5
 ### 13.4 生成发布固件
 
 ```text
-恢复 -O2
-    ↓
 MSPM0: Clean
     ↓
 MSPM0: Build
@@ -665,9 +582,9 @@ MSPM0: Build
 
 检查：
 
-- 调试使用的是最新 `build/firmware.out`。
-- 是否执行了 Clean + Build。
-- 是否仍使用 `-O2`。
+- 调试使用的是最新 `build/debug/firmware.out`。
+- `MSPM0: Build (Debug)` 是否成功完成。
+- `launch.json` 中的 `preLaunchTask` 是否仍为 `MSPM0: Build (Debug)`。
 - 断点所在代码是否确实会执行。
 - 是否设置了过多硬件断点。
 
@@ -686,9 +603,9 @@ MSPM0G3507 的硬件断点资源有限，不应同时设置大量断点。
 外设配置：SysConfig
 代码补全：Microsoft C/C++
 编译：TI Arm Clang + GNU Make
-日常烧录：J-Link
-断点调试：Cortex-Debug + J-Link GDB Server
-开源备用：DAPLink + OpenOCD
+日常烧录：DAPLink + OpenOCD
+断点调试：Cortex-Debug + DAPLink + OpenOCD
+备用烧录：J-Link
 TI 官方备用：XDS110 + DSLite
 ```
 

@@ -1,0 +1,29 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "MSPM0G3507: Debug with DAPLink",
+            "type": "cortex-debug",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/debug/firmware.out",
+            "servertype": "openocd",
+            "serverpath": "D:/ti/openocd-b56339c/bin/openocd.exe",
+            "gdbPath": "C:/Users/29871/AppData/Local/Texas Instruments/ti-embedded-debug/arm-none-eabi-gdb/14.2.rel1.1/arm-none-eabi-gdb.exe",
+            "searchDir": [
+                "D:/ti/openocd-b56339c/share/openocd/scripts"
+            ],
+            "configFiles": [
+                "interface/cmsis-dap.cfg",
+                "target/ti/mspm0.cfg"
+            ],
+            "serverArgs": [
+                "-c", "adapter speed 1000"
+            ],
+            "preLaunchTask": "MSPM0: Build (Debug)",
+            "runToEntryPoint": "main",
+            "svdFile": "C:/Users/29871/.vscode/extensions/ti-development-tools.cortex-debug-dp-mspm0-1.0.2/data/MSPM0G350X.svd",
+            "showDevDebugOutput": "none"
+        }
+    ]
+}
