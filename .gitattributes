@@ -1,0 +1,41 @@
+# Let Git detect text files, then normalize project text to LF in the repository.
+* text=auto
+
+*.c       text eol=lf
+*.h       text eol=lf
+*.s       text eol=lf
+*.S       text eol=lf
+*.ld      text eol=lf
+*.lds     text eol=lf
+*.cmd     text eol=lf
+*.mk      text eol=lf
+Makefile  text eol=lf
+
+*.json    text eol=lf
+*.jsonc   text eol=lf
+*.md      text eol=lf
+*.txt     text eol=lf
+*.ps1     text eol=lf
+*.syscfg  text eol=lf
+*.ccxml   text eol=lf
+*.dot     text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+
+# Firmware and document artifacts should never be line-ending normalized.
+*.o       binary
+*.obj     binary
+*.elf     binary
+*.out     binary
+*.axf     binary
+*.bin     binary
+*.hex     binary
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.pdf     binary
+*.zip     binary
+*.7z      binary
+*.tar     binary
+*.gz      binary

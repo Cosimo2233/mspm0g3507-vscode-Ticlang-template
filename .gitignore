@@ -1,1 +1,83 @@
+# -----------------------------------------------------------------------------
+# Project build output
+# -----------------------------------------------------------------------------
 /build/
+/Debug/
+/Release/
+/out/
+
+# Compiler, linker and dependency artifacts
+*.o
+*.obj
+*.d
+*.dep
+*.elf
+*.out
+*.axf
+*.hex
+*.bin
+*.map
+*.lst
+*.list
+*.dmp
+*.su
+
+# Generated programming/debugger files
+*.jlink
+JLinkLog.txt
+JLinkSettings.ini
+openocd.log
+*.launch
+
+# -----------------------------------------------------------------------------
+# Editor and IDE local state
+# Keep .vscode/*.json tracked: they are part of this reusable template.
+# -----------------------------------------------------------------------------
+.vs/
+.idea/
+.settings/
+.cache/
+.clangd/
+ipch/
+*.VC.db
+*.VC.db-shm
+*.VC.db-wal
+*.suo
+*.user
+*.userprefs
+*.code-workspace
+
+# CCS/Eclipse workspace metadata (not required by this standalone template)
+.metadata/
+.project
+.cproject
+.ccsproject
+.ccsproject.json
+
+# -----------------------------------------------------------------------------
+# Temporary and backup files
+# -----------------------------------------------------------------------------
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*.swp
+*.swo
+*~
+
+# Logs and crash reports
+*.log
+*.stackdump
+
+# -----------------------------------------------------------------------------
+# Operating-system files
+# -----------------------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
