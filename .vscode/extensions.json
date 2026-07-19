@@ -1,0 +1,6 @@
+{
+    "recommendations": [
+        "ms-vscode.cpptools",
+        "ti-development-tools.ti-embedded-development"
+    ]
+}

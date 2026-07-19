@@ -1,0 +1,87 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "MSPM0: Generate SysConfig",
+            "type": "process",
+            "command": "D:/ti/ccs/utils/bin/gmake.exe",
+            "args": ["-f", "Makefile", "syscfg"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": []
+        },
+        {
+            "label": "MSPM0: Open SysConfig",
+            "type": "process",
+            "command": "D:/ti/SYSCONFIG/sysconfig_gui.bat",
+            "args": [
+                "--compiler", "ticlang",
+                "--product", "D:/ti/mspm0_sdk_2_04_00_06/.metadata/product.json",
+                "${workspaceFolder}/config/app.syscfg"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": []
+        },
+        {
+            "label": "MSPM0: Build",
+            "type": "process",
+            "command": "D:/ti/ccs/utils/bin/gmake.exe",
+            "args": ["-f", "Makefile", "all"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": "$gcc",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "MSPM0: Clean",
+            "type": "process",
+            "command": "D:/ti/ccs/utils/bin/gmake.exe",
+            "args": ["-f", "Makefile", "clean"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": []
+        },
+        {
+            "label": "MSPM0: Build + Flash (J-Link)",
+            "type": "process",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-File", "${workspaceFolder}/tools/flash-jlink.ps1"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "dependsOrder": "sequence",
+            "dependsOn": "MSPM0: Build",
+            "problemMatcher": []
+        },
+        {
+            "label": "MSPM0: Build + Flash (DAPLink/OpenOCD)",
+            "type": "process",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-File", "${workspaceFolder}/tools/flash-openocd.ps1"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "dependsOrder": "sequence",
+            "dependsOn": "MSPM0: Build",
+            "problemMatcher": []
+        },
+        {
+            "label": "MSPM0: Build + Flash (XDS110/DSLite)",
+            "type": "process",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-File", "${workspaceFolder}/tools/flash-xds110.ps1"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "dependsOrder": "sequence",
+            "dependsOn": "MSPM0: Build",
+            "problemMatcher": []
+        }
+    ]
+}
