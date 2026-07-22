@@ -1,5 +1,7 @@
 # MSPM0G3507 VS Code + TI Arm Clang 开发模板
 
+当前 SysConfig 目标为立创·地猛星使用的 MSPM0G3507 48Pin `LQFP-48(PT)` 封装。
+
 本工程是一套独立于 CCS 工程管理系统的 MSPM0G3507 Windows 开发模板，覆盖以下流程：
 
 ```text
@@ -343,6 +345,7 @@ Linking build/firmware.out
 | 文件 | 用途 |
 | --- | --- |
 | `build/firmware.out` | 可烧录且包含调试符号的 ELF 固件 |
+| `build/firmware.hex` | Intel HEX 固件，可用于串口 BSL 或其他支持 HEX 的烧录工具 |
 | `build/firmware.map` | 链接映射、段大小和符号地址 |
 | `build/obj/*.obj` | 目标文件 |
 | `build/obj/*.d` | 自动依赖文件 |

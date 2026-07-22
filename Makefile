@@ -18,6 +18,7 @@ PRODUCT_JSON := $(MSPM0_SDK_ROOT)/.metadata/product.json
 STARTUP_SOURCE := $(MSPM0_SDK_ROOT)/source/ti/devices/msp/m0p/startup_system_files/ticlang/startup_mspm0g350x_ticlang.c
 
 CC := "$(TICLANG_ROOT)/bin/tiarmclang.exe"
+OBJCOPY := "$(TICLANG_ROOT)/bin/tiarmobjcopy.exe"
 SYSCONFIG_CLI := "$(SYSCONFIG_ROOT)/sysconfig_cli.bat"
 
 USER_SOURCES := $(wildcard $(SOURCE_DIR)/*.c)
@@ -36,6 +37,7 @@ SYSCONFIG_OUTPUTS := $(SYSCONFIG_SOURCE) $(SYSCONFIG_HEADER) $(DEVICE_OPT) $(LIN
 
 OUTPUT := $(BUILD_DIR)/$(PROJECT_NAME).out
 MAP_FILE := $(BUILD_DIR)/$(PROJECT_NAME).map
+HEX_FILE := $(BUILD_DIR)/$(PROJECT_NAME).hex
 
 CFLAGS := \
     -I$(INCLUDE_DIR) \
@@ -66,7 +68,7 @@ LFLAGS := \
 
 .PHONY: all syscfg clean
 
-all: $(OUTPUT)
+all: $(OUTPUT) $(HEX_FILE)
 
 syscfg: $(SYSCONFIG_OUTPUTS)
 
@@ -92,6 +94,10 @@ $(STARTUP_OBJECT): $(STARTUP_SOURCE) $(SYSCONFIG_HEADER) | $(OBJECT_DIR)
 $(OUTPUT): $(OBJECTS) $(LINKER_COMMAND) $(GENERATED_LIBS) | $(BUILD_DIR)
 	@ echo Linking $@
 	@ $(CC) -Wl,-u,_c_int00 $(OBJECTS) $(LFLAGS) -o "$@"
+
+$(HEX_FILE): $(OUTPUT)
+	@ echo Generating $@
+	@ $(OBJCOPY) -O ihex "$<" "$@"
 
 clean:
 	@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "tools/clean.ps1" -BuildDir "$(BUILD_DIR)"
