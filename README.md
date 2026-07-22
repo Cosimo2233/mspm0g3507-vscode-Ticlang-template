@@ -11,17 +11,17 @@
     ↓
 TI Arm Clang 编译、链接
     ↓
-生成 build/firmware.out
+生成 build/firmware.out、firmware.hex 和 firmware.map
     ↓
 J-Link / DAPLink(OpenOCD) / XDS110(DSLite) 烧录
     ↓
 Cortex-Debug + GDB 断点调试
 ```
 
-原始 MSPM0 SDK 保持不变。本工程位于：
+原始 MSPM0 SDK 保持不变。本机当前工程位于：
 
 ```text
-D:\ti\mspm0g3507-vscode-template
+D:\workspace\mspm0g3507-vscode-Ticlang-template
 ```
 
 ## 1. 工程结构
@@ -31,6 +31,7 @@ mspm0g3507-vscode-template/
 ├─ .vscode/
 │  ├─ c_cpp_properties.json    TI Clang 代码补全配置
 │  ├─ extensions.json          推荐的 VS Code 扩展
+│  ├─ launch.json              DAPLink/OpenOCD 调试配置
 │  ├─ settings.json            工程级编辑器设置
 │  └─ tasks.json               SysConfig、编译、清理和烧录任务
 ├─ config/
@@ -63,6 +64,7 @@ config/app.syscfg
 build/obj/
 build/syscfg/
 build/firmware.out
+build/firmware.hex
 build/firmware.map
 ```
 
@@ -79,6 +81,207 @@ build/firmware.map
 | DSLite 20.5 | `D:/ti/ccs/ccs_base/DebugServer/bin` | XDS110 命令行烧录 |
 | TI Embedded Debug | VS Code 扩展 | OpenOCD、GDB 和 MSPM0 调试支持 |
 
+### 2.1 新电脑从零配置环境（重点）
+
+本模板可以放在任意英文路径中。最省事的方法是在新电脑上沿用下面的工具目录；这样克隆工程后通常不需要修改配置：
+
+```text
+D:\ti\mspm0_sdk_2_04_00_06
+D:\ti\ccs
+D:\ti\SYSCONFIG
+D:\ti\openocd-b56339c
+C:\Program Files\SEGGER\JLink_V930a       可选
+```
+
+工程本身可以位于：
+
+```text
+D:\workspace\mspm0g3507-vscode-Ticlang-template
+```
+
+不要把 SDK 复制进工程，也不要将工程放回 SDK 的 `examples` 目录。工程通过 Makefile 引用 SDK，源码和 SDK 可以独立升级、备份和提交 Git。
+
+#### 第一步：安装 VS Code 和扩展
+
+安装 64 位 VS Code，然后在扩展市场安装：
+
+| 扩展 | 扩展 ID | 用途 |
+| --- | --- | --- |
+| Microsoft C/C++ | `ms-vscode.cpptools` | 补全、跳转和错误提示 |
+| Cortex-Debug | `marus25.cortex-debug` | 调用 OpenOCD/GDB 断点调试 |
+| TI Embedded Development | `ti-development-tools.ti-embedded-development` | TI 调试工具、设备支持和相关扩展 |
+
+也可以在 PowerShell 中执行：
+
+```powershell
+code --install-extension ms-vscode.cpptools
+code --install-extension marus25.cortex-debug
+code --install-extension ti-development-tools.ti-embedded-development
+```
+
+安装扩展后重启 VS Code。Cortex-Debug 能否启动，取决于 `.vscode/launch.json` 中的 OpenOCD、GDB 和 SVD 路径是否存在。
+
+#### 第二步：安装 MSPM0 SDK 2.04.00.06
+
+从 [TI MSPM0 SDK 官方页面](https://www.ti.com/tool/MSPM0-SDK) 安装或解压与模板匹配的 `2.04.00.06`，推荐目录：
+
+```text
+D:\ti\mspm0_sdk_2_04_00_06
+```
+
+安装后至少确认：
+
+```text
+D:\ti\mspm0_sdk_2_04_00_06\.metadata\product.json
+D:\ti\mspm0_sdk_2_04_00_06\source\ti\driverlib\driverlib.h
+D:\ti\mspm0_sdk_2_04_00_06\source\ti\devices\msp\m0p\startup_system_files\ticlang\startup_mspm0g350x_ticlang.c
+```
+
+本模板的 `config/app.syscfg` 声明了 `mspm0_sdk@2.04.00.06`。如果直接换成新版 SDK，需要在新版 SysConfig 中打开、迁移并保存配置，再完整验证引脚、时钟、链接文件和烧录结果；不建议只改目录名冒充 2.04。
+
+#### 第三步：安装 CCS 与 TI Arm Clang
+
+从 [TI Code Composer Studio 官方页面](https://www.ti.com/tool/CCSTUDIO) 安装 CCS，并包含 MSPM0/Arm 编译支持。当前模板需要：
+
+```text
+D:\ti\ccs\tools\compiler\ti-cgt-armllvm_4.0.4.LTS\bin\tiarmclang.exe
+D:\ti\ccs\tools\compiler\ti-cgt-armllvm_4.0.4.LTS\bin\tiarmobjcopy.exe
+D:\ti\ccs\utils\bin\gmake.exe
+```
+
+`tiarmclang.exe` 负责编译和链接，`tiarmobjcopy.exe` 将 ELF 转换为 Intel HEX，`gmake.exe` 执行根目录 Makefile。只使用 VS Code 编写程序时不需要创建或导入 CCS 工程，但这些命令行工具仍由 CCS 安装提供。
+
+验证版本：
+
+```powershell
+& 'D:\ti\ccs\tools\compiler\ti-cgt-armllvm_4.0.4.LTS\bin\tiarmclang.exe' --version
+& 'D:\ti\ccs\utils\bin\gmake.exe' --version
+```
+
+#### 第四步：安装独立 SysConfig
+
+从 [TI SysConfig 官方页面](https://www.ti.com/tool/SYSCONFIG) 安装独立版 SysConfig，推荐目录：
+
+```text
+D:\ti\SYSCONFIG
+```
+
+确认以下两个文件存在：
+
+```text
+D:\ti\SYSCONFIG\sysconfig_cli.bat
+D:\ti\SYSCONFIG\sysconfig_gui.bat
+```
+
+验证：
+
+```powershell
+& 'D:\ti\SYSCONFIG\sysconfig_cli.bat' --version
+```
+
+当前验证版本是 `1.23.0+4000`。SysConfig GUI 用于编辑 `config/app.syscfg`，CLI 会在每次需要时自动生成 `build/syscfg/`。
+
+#### 第五步：安装 DAPLink 所需的 OpenOCD
+
+本模板默认使用 DAPLink/CMSIS-DAP。OpenOCD 必须同时包含：
+
+```text
+D:\ti\openocd-b56339c\bin\openocd.exe
+D:\ti\openocd-b56339c\share\openocd\scripts\interface\cmsis-dap.cfg
+D:\ti\openocd-b56339c\share\openocd\scripts\target\ti\mspm0.cfg
+```
+
+最后一个 `mspm0.cfg` 以及 OpenOCD 内部的 MSPM0 Flash Driver 缺一不可。普通旧版 OpenOCD 即使能识别 CMSIS-DAP，也可能无法给 MSPM0 烧录。OpenOCD 的参数格式可以参考[官方文档](https://openocd.org/pages/documentation.html)。
+
+验证程序和目标配置：
+
+```powershell
+& 'D:\ti\openocd-b56339c\bin\openocd.exe' --version
+Test-Path 'D:\ti\openocd-b56339c\share\openocd\scripts\target\ti\mspm0.cfg'
+```
+
+连接地猛星时使用 `GND`、`CLK/SWCLK`、`DIO/SWDIO`，建议再连接 `RST/NRST`。开发板与探针必须共地，并避免两个 5V 电源互相反向供电。
+
+#### 第六步：准备 GDB 和 SVD（仅 F5 调试需要）
+
+普通编译和烧录不需要 GDB。按 `F5` 调试时，`.vscode/launch.json` 默认使用 TI Embedded Debug 安装的：
+
+```text
+%LOCALAPPDATA%\Texas Instruments\ti-embedded-debug\arm-none-eabi-gdb\14.2.rel1.1\arm-none-eabi-gdb.exe
+%USERPROFILE%\.vscode\extensions\ti-development-tools.cortex-debug-dp-mspm0-1.0.2\data\MSPM0G350X.svd
+```
+
+不同电脑安装到的 GDB 或扩展版本号可能不同。先搜索实际文件：
+
+```powershell
+Get-ChildItem "$env:LOCALAPPDATA\Texas Instruments" -Filter arm-none-eabi-gdb.exe -File -Recurse
+Get-ChildItem "$env:USERPROFILE\.vscode\extensions" -Filter MSPM0G350X.svd -File -Recurse
+```
+
+然后把结果写入 `.vscode/launch.json` 的 `gdbPath` 和 `svdFile`。SVD 只影响外设寄存器视图；GDB 路径错误会导致调试无法启动。
+
+#### 第七步：可选安装 J-Link 和 XDS110/DSLite
+
+- 只使用 DAPLink 时可跳过 J-Link。
+- 安装 SEGGER J-Link 后，检查 `tools/flash-jlink.ps1` 中的 `JLink.exe` 路径。
+- XDS110 烧录使用 CCS/UniFlash 的 `DSLite.exe`，检查 `tools/flash-xds110.ps1`。
+- 三种烧录脚本都使用 `build/firmware.out`，编译失败时不会继续烧录。
+
+#### 第八步：路径与配置文件对应关系
+
+如果没有采用推荐目录，需要同步修改以下位置：
+
+| 路径类型 | 需要修改的文件 |
+| --- | --- |
+| SDK、TI Clang、SysConfig | `Makefile` |
+| GNU Make、SysConfig GUI、SDK product.json | `.vscode/tasks.json` |
+| TI Clang 和 SDK 头文件 | `.vscode/c_cpp_properties.json`、`.vscode/settings.json` |
+| OpenOCD、GDB、SVD | `.vscode/launch.json` |
+| OpenOCD 默认位置 | `tools/flash-openocd.ps1` |
+| J-Link 默认位置 | `tools/flash-jlink.ps1` |
+| DSLite 默认位置 | `tools/flash-xds110.ps1` |
+
+Makefile 和 JSON 中推荐使用正斜杠，例如 `D:/ti/...`。PowerShell 脚本同时支持正斜杠和反斜杠。
+
+#### 第九步：在新电脑执行环境自检
+
+在 PowerShell 中运行：
+
+```powershell
+$required = @(
+    'D:\ti\mspm0_sdk_2_04_00_06\.metadata\product.json',
+    'D:\ti\ccs\tools\compiler\ti-cgt-armllvm_4.0.4.LTS\bin\tiarmclang.exe',
+    'D:\ti\ccs\tools\compiler\ti-cgt-armllvm_4.0.4.LTS\bin\tiarmobjcopy.exe',
+    'D:\ti\ccs\utils\bin\gmake.exe',
+    'D:\ti\SYSCONFIG\sysconfig_cli.bat',
+    'D:\ti\SYSCONFIG\sysconfig_gui.bat',
+    'D:\ti\openocd-b56339c\bin\openocd.exe',
+    'D:\ti\openocd-b56339c\share\openocd\scripts\interface\cmsis-dap.cfg',
+    'D:\ti\openocd-b56339c\share\openocd\scripts\target\ti\mspm0.cfg'
+)
+$required | ForEach-Object {
+    [pscustomobject]@{ Exists = Test-Path -LiteralPath $_; Path = $_ }
+}
+```
+
+所有项目都应显示 `Exists=True`。随后在工程根目录执行第一次干净构建：
+
+```powershell
+& 'D:\ti\ccs\utils\bin\gmake.exe' -f Makefile clean
+& 'D:\ti\ccs\utils\bin\gmake.exe' -f Makefile all
+```
+
+成功后必须存在：
+
+```text
+build\firmware.out
+build\firmware.hex
+build\firmware.map
+build\syscfg\ti_msp_dl_config.h
+```
+
+`gmake: Nothing to be done for 'all'.` 表示输出已经是最新版本，不是失败。
+
 更换 SDK 或工具版本时，需要同步检查：
 
 - `Makefile`
@@ -92,7 +295,7 @@ build/firmware.map
 2. 打开：
 
    ```text
-   D:\ti\mspm0g3507-vscode-template
+   D:\workspace\mspm0g3507-vscode-Ticlang-template
    ```
 
 3. 按 `Ctrl+Shift+P`，执行 `Tasks: Run Task`。

@@ -9,7 +9,7 @@
             "executable": "${workspaceFolder}/build/debug/firmware.out",
             "servertype": "openocd",
             "serverpath": "D:/ti/openocd-b56339c/bin/openocd.exe",
-            "gdbPath": "C:/Users/29871/AppData/Local/Texas Instruments/ti-embedded-debug/arm-none-eabi-gdb/14.2.rel1.1/arm-none-eabi-gdb.exe",
+            "gdbPath": "${env:LOCALAPPDATA}/Texas Instruments/ti-embedded-debug/arm-none-eabi-gdb/14.2.rel1.1/arm-none-eabi-gdb.exe",
             "searchDir": [
                 "D:/ti/openocd-b56339c/share/openocd/scripts"
             ],
@@ -22,7 +22,7 @@
             ],
             "preLaunchTask": "MSPM0: Build (Debug)",
             "runToEntryPoint": "main",
-            "svdFile": "C:/Users/29871/.vscode/extensions/ti-development-tools.cortex-debug-dp-mspm0-1.0.2/data/MSPM0G350X.svd",
+            "svdFile": "${env:USERPROFILE}/.vscode/extensions/ti-development-tools.cortex-debug-dp-mspm0-1.0.2/data/MSPM0G350X.svd",
             "showDevDebugOutput": "none"
         }
     ]
