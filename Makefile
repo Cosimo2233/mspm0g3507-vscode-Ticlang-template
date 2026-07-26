@@ -21,7 +21,10 @@ CC := "$(TICLANG_ROOT)/bin/tiarmclang.exe"
 OBJCOPY := "$(TICLANG_ROOT)/bin/tiarmobjcopy.exe"
 SYSCONFIG_CLI := "$(SYSCONFIG_ROOT)/sysconfig_cli.bat"
 
-USER_SOURCES := $(wildcard $(SOURCE_DIR)/*.c)
+# Recursively collect C sources while preserving their path below src/.
+# Example: src/drivers/uart.c -> build/obj/drivers/uart.obj
+rwildcard = $(foreach item,$(wildcard $1*),$(call rwildcard,$(item)/,$2) $(filter $(subst *,%,$2),$(item)))
+USER_SOURCES := $(strip $(call rwildcard,$(SOURCE_DIR)/,*.c))
 USER_OBJECTS := $(patsubst $(SOURCE_DIR)/%.c,$(OBJECT_DIR)/%.obj,$(USER_SOURCES))
 SYSCONFIG_SOURCE := $(SYSCONFIG_DIR)/ti_msp_dl_config.c
 SYSCONFIG_HEADER := $(SYSCONFIG_DIR)/ti_msp_dl_config.h
@@ -79,15 +82,16 @@ $(SYSCONFIG_OUTPUTS) &: $(SYSCONFIG_FILE) | $(SYSCONFIG_DIR)
 	@ echo Generating SysConfig files...
 	@ $(SYSCONFIG_CLI) --compiler ticlang --product "$(PRODUCT_JSON)" --output "$(SYSCONFIG_DIR)" "$(SYSCONFIG_FILE)"
 
-$(OBJECT_DIR)/%.obj: $(SOURCE_DIR)/%.c $(SYSCONFIG_HEADER) | $(OBJECT_DIR)
+$(OBJECT_DIR)/%.obj: $(SOURCE_DIR)/%.c $(SYSCONFIG_HEADER) Makefile | $(OBJECT_DIR)
 	@ echo Building $@
+	@ powershell.exe -NoProfile -Command "New-Item -ItemType Directory -Force -Path '$(@D)' | Out-Null"
 	@ $(CC) $(CFLAGS) -MF "$(@:.obj=.d)" -c "$<" -o "$@"
 
-$(SYSCONFIG_OBJECT): $(SYSCONFIG_SOURCE) $(SYSCONFIG_HEADER) | $(OBJECT_DIR)
+$(SYSCONFIG_OBJECT): $(SYSCONFIG_SOURCE) $(SYSCONFIG_HEADER) Makefile | $(OBJECT_DIR)
 	@ echo Building $@
 	@ $(CC) $(CFLAGS) -MF "$(@:.obj=.d)" -c "$(SYSCONFIG_SOURCE)" -o "$@"
 
-$(STARTUP_OBJECT): $(STARTUP_SOURCE) $(SYSCONFIG_HEADER) | $(OBJECT_DIR)
+$(STARTUP_OBJECT): $(STARTUP_SOURCE) $(SYSCONFIG_HEADER) Makefile | $(OBJECT_DIR)
 	@ echo Building $@
 	@ $(CC) $(CFLAGS) -MF "$(@:.obj=.d)" -c "$(STARTUP_SOURCE)" -o "$@"
 

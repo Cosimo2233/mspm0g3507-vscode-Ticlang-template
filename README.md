@@ -36,19 +36,49 @@ mspm0g3507-vscode-template/
 │  └─ tasks.json               SysConfig、编译、清理和烧录任务
 ├─ config/
 │  └─ app.syscfg               时钟、引脚和外设配置
-├─ include/                    用户头文件
+├─ include/                    用户公开头文件
+│  ├─ app/                     应用层接口
+│  ├─ drivers/                 板级驱动接口
+│  └─ modules/                 可复用功能模块接口
 ├─ src/
-│  └─ main.c                   主程序及用户源文件
+│  ├─ main.c                   程序入口
+│  ├─ app/                     应用初始化、调度和状态机
+│  ├─ drivers/                 LED、按键、UART、ADC 等板级驱动
+│  └─ modules/                 PID、滤波、协议和控制算法
+├─ third_party/                第三方组件及许可证
+├─ docs/                       接线、协议和设计文档
+├─ tests/                      主机端算法和协议测试
 ├─ tools/
 │  ├─ clean.ps1                安全清理 build 目录
 │  ├─ flash-jlink.ps1          J-Link 烧录脚本
 │  ├─ flash-openocd.ps1        DAPLink/OpenOCD 烧录脚本
 │  ├─ flash-xds110.ps1         XDS110/DSLite 烧录脚本
 │  └─ mspm0g3507_xds110.ccxml  XDS110 目标配置
-├─ build/                      自动生成的构建目录
+├─ build/                      自动生成，不提交 Git
+│  ├─ obj/                     与 src/ 对应的目标和依赖文件
+│  └─ syscfg/                  SysConfig 自动生成文件
 ├─ Makefile                    编译和链接规则
 └─ README.md                   本文档
 ```
+
+目录之间推荐保持以下依赖方向：
+
+```text
+main.c
+  ↓
+app/
+  ├─→ modules/
+  └─→ drivers/
+         ↓
+  SysConfig / TI DriverLib
+```
+
+- `main.c` 只保留程序入口、一次 `SYSCFG_DL_init()` 和顶层调度。
+- `app/` 负责业务流程，可以调用模块层和驱动层。
+- `modules/` 保存尽量与具体引脚无关的算法、协议和状态机。
+- `drivers/` 封装板级硬件，不应依赖应用层。
+- `third_party/` 默认不参与编译，接入时应明确记录版本、许可证和适配方式。
+- `build/` 中的任何内容都可以重新生成，不要手工维护。
 
 需要长期维护的内容主要是：
 
@@ -342,37 +372,49 @@ int main(void)
 
 ### 4.2 添加源文件
 
-应用源文件直接放到 `src/` 第一层：
+应用源文件放到 `src/`，并可以按照职责使用子目录：
 
 ```text
 src/main.c
-src/led.c
-src/uart.c
-src/app.c
+src/app/app.c
+src/drivers/led.c
+src/drivers/uart.c
+src/modules/control.c
 ```
 
-Makefile 会自动扫描 `src/*.c`。当前不会递归扫描 `src` 子目录，因此暂时不要使用 `src/drivers/uart.c` 这样的结构，除非同步扩展 Makefile。
+Makefile 会递归收集 `src/` 下的所有 `.c`，不需要手工维护源文件清单。对象和依赖文件会保持相同的相对目录：
+
+```text
+src/app/app.c             → build/obj/app/app.obj
+src/drivers/uart.c        → build/obj/drivers/uart.obj
+src/modules/control.c     → build/obj/modules/control.obj
+```
 
 ### 4.3 添加头文件
 
-用户头文件放入 `include/`：
+用户头文件放入 `include/` 对应的子目录：
 
 ```text
-include/led.h
-include/uart.h
-include/app.h
+include/app/app.h
+include/drivers/led.h
+include/drivers/uart.h
+include/modules/control.h
 ```
 
-源文件中可以直接引用：
+`include/` 是头文件搜索根目录，因此引用时使用完整相对路径：
 
 ```c
-#include "led.h"
-#include "uart.h"
+#include "app/app.h"
+#include "drivers/led.h"
+#include "drivers/uart.h"
+#include "modules/control.h"
 ```
+
+不建议把每个子目录都单独加入搜索路径，否则不同模块出现同名头文件时容易引用错误。
 
 ### 4.4 模块化示例
 
-`include/led.h`：
+`include/drivers/led.h`：
 
 ```c
 #ifndef LED_H
@@ -384,11 +426,11 @@ void LED_toggle(void);
 #endif
 ```
 
-`src/led.c`：
+`src/drivers/led.c`：
 
 ```c
 #include "ti_msp_dl_config.h"
-#include "led.h"
+#include "drivers/led.h"
 
 void LED_init(void)
 {
@@ -405,7 +447,7 @@ void LED_toggle(void)
 
 ```c
 #include "ti_msp_dl_config.h"
-#include "led.h"
+#include "drivers/led.h"
 
 int main(void)
 {
@@ -418,6 +460,22 @@ int main(void)
     }
 }
 ```
+
+### 4.5 各目录适合放什么
+
+| 目录 | 适合内容 | 不建议放置 |
+| --- | --- | --- |
+| `src/` | 用户 `.c` 实现 | 自动生成代码、第三方完整源码包 |
+| `include/` | 用户公开 `.h` 接口 | 普通全局变量定义、大段函数实现 |
+| `src/drivers/` | GPIO、UART、ADC、PWM、按键等板级封装 | 产品业务流程 |
+| `src/modules/` | PID、滤波、协议、控制算法 | 直接写死板级引脚 |
+| `src/app/` | 应用初始化、调度和状态机 | 可独立复用的底层算法 |
+| `config/` | `app.syscfg` 等持久硬件配置 | `build/syscfg` 的生成结果 |
+| `third_party/` | 有来源和许可证的外部组件 | 未知来源的复制代码 |
+| `docs/` | 接线、协议、设计和测试说明 | 可从官网下载的大型重复资料 |
+| `tests/` | 主机端算法、协议测试及测试数据 | 目标固件正式源码 |
+
+各空目录中的 `README.md` 是用途说明和 Git 占位文件。开始添加真实模块后可以保留说明，也可以继续补充更具体的模块文档。
 
 ## 5. 代码补全与跳转
 
@@ -498,7 +556,7 @@ config/app.syscfg
     ↓
 SysConfig 生成外设、启动和链接配置
     ↓
-tiarmclang 编译 src/*.c
+tiarmclang 递归编译 src/**/*.c
     ↓
 编译 SysConfig 生成代码和 MSPM0 启动文件
     ↓
@@ -716,7 +774,7 @@ Makefile 的默认优化等级仍是 `-O2`。按 `F5` 时，调试构建任务�
 ### 13.1 只修改应用代码
 
 ```text
-修改 src/*.c 或 include/*.h
+修改 src/**/*.c 或 include/**/*.h
     ↓
 Ctrl+Shift+B
     ↓
