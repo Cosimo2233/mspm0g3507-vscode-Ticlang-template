@@ -24,6 +24,50 @@
             "runToEntryPoint": "main",
             "svdFile": "${env:USERPROFILE}/.vscode/extensions/ti-development-tools.cortex-debug-dp-mspm0-1.0.2/data/MSPM0G350X.svd",
             "showDevDebugOutput": "none"
+        },
+        {
+            "name": "MSPM0G3507: Debug with J-Link",
+            "type": "cortex-debug",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/debug/firmware.out",
+            "servertype": "jlink",
+            "serverpath": "C:/Program Files/SEGGER/JLink_V930a/JLinkGDBServerCL.exe",
+            "gdbPath": "${env:LOCALAPPDATA}/Texas Instruments/ti-embedded-debug/arm-none-eabi-gdb/14.2.rel1.1/arm-none-eabi-gdb.exe",
+            "device": "MSPM0G3507",
+            "interface": "swd",
+            "serverArgs": [
+                "-speed",
+                "4000"
+            ],
+            "preLaunchTask": "MSPM0: Build (Debug)",
+            "runToEntryPoint": "main",
+            "svdFile": "${env:USERPROFILE}/.vscode/extensions/ti-development-tools.cortex-debug-dp-mspm0-1.0.2/data/MSPM0G350X.svd",
+            "showDevDebugOutput": "none"
+        },
+        {
+            "name": "MSPM0G3507: Debug with XDS110",
+            "type": "cortex-debug",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/debug/firmware.out",
+            "servertype": "openocd",
+            "serverpath": "D:/ti/openocd-b56339c/bin/openocd.exe",
+            "gdbPath": "${env:LOCALAPPDATA}/Texas Instruments/ti-embedded-debug/arm-none-eabi-gdb/14.2.rel1.1/arm-none-eabi-gdb.exe",
+            "searchDir": [
+                "D:/ti/openocd-b56339c/share/openocd/scripts"
+            ],
+            "configFiles": [
+                "interface/xds110.cfg",
+                "target/ti/mspm0.cfg"
+            ],
+            "serverArgs": [
+                "-c", "adapter speed 1000"
+            ],
+            "preLaunchTask": "MSPM0: Build (Debug)",
+            "runToEntryPoint": "main",
+            "svdFile": "${env:USERPROFILE}/.vscode/extensions/ti-development-tools.cortex-debug-dp-mspm0-1.0.2/data/MSPM0G350X.svd",
+            "showDevDebugOutput": "none"
         }
     ]
 }
